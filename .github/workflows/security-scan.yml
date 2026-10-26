@@ -48,3 +48,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 -I -S "$RUNNER_TEMP/credential-guard/security_scan.py" "$GITHUB_WORKSPACE" --mode tracked
+
+      - name: Mocked provider configuration tests (no provider calls)
+        run: python3 -I -S security/test_provider_config.py
