@@ -1,3 +1,4 @@
+import os
 
 
 from flask import Flask, request, jsonify
@@ -9,13 +10,7 @@ app = Flask(__name__)
 
 # LLaMA API URL and Token
 API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B"
-API_TOKEN = "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"
 
-# Headers for API Requests
-headers = {
-    "Authorization": f"Bearer {API_TOKEN}",
-    "Content-Type": "application/json"
-}
 
 # Session Memory
 conversation_history = []
@@ -28,6 +23,10 @@ def query_llama(prompt, max_length=50, temperature=0.7):
     :param temperature: Randomness in text generation.
     :return: Generated text response.
     """
+    token = os.environ.get("HF_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("HF_TOKEN is required; configure it in the server environment")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     payload = {
         "inputs": prompt,
         "parameters": {
@@ -35,11 +34,11 @@ def query_llama(prompt, max_length=50, temperature=0.7):
             "temperature": temperature
         }
     }
-    response = requests.post(API_URL, headers=headers, json=payload)
+    response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
     if response.status_code == 200:
         return response.json()[0]["generated_text"]
     else:
-        raise Exception(f"Failed to connect: {response.status_code} - {response.text}")
+        raise RuntimeError(f"Provider request failed with status {response.status_code}")
 
 @app.route('/')
 def home():
